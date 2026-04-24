@@ -2,7 +2,7 @@ import time
 import base64
 import requests
 from appium import webdriver
-from appium.options import AppiumOptions
+from appium.options.common.base import AppiumOptions
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -51,7 +51,7 @@ class TestBase:
 
         print(f"Initialize Appium driver with desiredCaps: {desired_caps}")
         server_url = self._proxy.get_server_url() + '/wd/hub'
-        options = AppiumOptions.load_capabilities(desired_caps)
+        options = AppiumOptions().load_capabilities(desired_caps)
         self._driver = webdriver.Remote(server_url, options=options)
 
     def cleanup(self):

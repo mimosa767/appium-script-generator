@@ -62,6 +62,19 @@ def validate(zip_path):
         )
 
     # ------------------------------------------------------------------
+    # 2b. test_base.py must import AppiumOptions from its real module path.
+    #     In Appium-Python-Client 3.x/4.x, AppiumOptions lives at
+    #     appium.options.common.base, NOT appium.options — the shorter
+    #     path raises ImportError at collection time.
+    # ------------------------------------------------------------------
+    test_base = py_files.get('test_base.py', '')
+    if 'from appium.options.common.base import AppiumOptions' not in test_base:
+        errors.append(
+            'test_base.py: missing or wrong AppiumOptions import — '
+            'must be "from appium.options.common.base import AppiumOptions"'
+        )
+
+    # ------------------------------------------------------------------
     # 3. config.py: generated boolean capabilities must use Python
     #    True/False, not JavaScript true/false.
     #    Pattern: a dict-value position — '...': true or '...': false
