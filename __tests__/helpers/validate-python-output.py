@@ -75,6 +75,33 @@ def validate(zip_path):
         )
 
     # ------------------------------------------------------------------
+    # 2c. test_base.py find_online_device must accept the newer
+    #     /v1/devices response shape. test-green returns
+    #     privateDevices/favoriteDevices/cloudDevices/etc, NOT
+    #     deviceListData — checking only the legacy key produces
+    #     false-negative "device not available" retries every run.
+    # ------------------------------------------------------------------
+    if "'privateDevices'" not in test_base and 'privateDevices' not in test_base:
+        errors.append(
+            'test_base.py: find_online_device does not recognize the newer '
+            'Kobiton /v1/devices response shape (privateDevices/cloudDevices/...). '
+            'Must union all device category keys, not only deviceListData'
+        )
+
+    # ------------------------------------------------------------------
+    # 2d. proxy_server.py must strip the client Host header before
+    #     forwarding to Kobiton. Without this, the upstream sees
+    #     Host: localhost:<port> and responds 404 to every request.
+    # ------------------------------------------------------------------
+    proxy = py_files.get('proxy_server.py', '')
+    if "'host'" not in proxy.lower():
+        errors.append(
+            'proxy_server.py: does not strip the Host header before forwarding. '
+            'Upstream Kobiton routes by Host and returns 404 for localhost. '
+            'Must filter hop-by-hop/routing headers (including Host) from the forwarded request'
+        )
+
+    # ------------------------------------------------------------------
     # 3. config.py: generated boolean capabilities must use Python
     #    True/False, not JavaScript true/false.
     #    Pattern: a dict-value position — '...': true or '...': false

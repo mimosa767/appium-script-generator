@@ -204,8 +204,12 @@ class TestBase:
                         'isBooked': False
                     }
                 )
-                if response.status_code == 200 and response.json().get('deviceListData', []):
-                    return
+                if response.status_code == 200:
+                    data = response.json() or {}
+                    device_keys = ('deviceListData', 'privateDevices', 'favoriteDevices',
+                                   'cloudDevices', 'itaTrialCloudDevices', 'virtualDevices')
+                    if any(data.get(k) for k in device_keys):
+                        return
             except Exception as e:
                 print(f"Error checking device availability: {e}")
             print(f"Device not available, retrying ({attempt + 1}/{Config.DEVICE_WAITING_MAX_TRY_TIMES})...")

@@ -2,7 +2,12 @@ import socket
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 from config import Config
+
+_STRIP_HEADERS = {'host', 'content-length', 'connection', 'keep-alive',
+                  'proxy-authenticate', 'proxy-authorization', 'te',
+                  'trailer', 'transfer-encoding', 'upgrade', 'authorization'}
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -16,7 +21,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             separator = '&' if '?' in url else '?'
             url = f"{url}{separator}baseCommandId={self.current_command_id}"
 
-        headers = {key: val for key, val in self.headers.items()}
+        headers = {k: v for k, v in self.headers.items() if k.lower() not in _STRIP_HEADERS}
         headers['Authorization'] = Config.get_basic_auth_string()
         req = Request(url, data=body, headers=headers, method=method)
 
@@ -24,9 +29,20 @@ class ProxyHandler(BaseHTTPRequestHandler):
             with urlopen(req) as response:
                 self.send_response(response.status)
                 for key, val in response.headers.items():
+                    if key.lower() in _STRIP_HEADERS:
+                        continue
                     self.send_header(key, val)
                 self.end_headers()
                 self.wfile.write(response.read())
+        except HTTPError as e:
+            body = e.read()
+            self.send_response(e.code)
+            for key, val in e.headers.items():
+                if key.lower() in _STRIP_HEADERS:
+                    continue
+                self.send_header(key, val)
+            self.end_headers()
+            self.wfile.write(body)
         except Exception as e:
             self.send_error(502, str(e))
 
